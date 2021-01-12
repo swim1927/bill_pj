@@ -1,15 +1,26 @@
 import pandas as pd
 import pickle
-from xgboost import XGBRegressor
+import sqlite3
 
+conn = sqlite3.connect("bills_preprocessed.db")
+df = pd.read_sql("select * from bills", con = conn)
 
+committee = ['보건복지위원회',
+       '행정안전위원회', '산업통상자원중소벤처기업위원회', '문화체육관광위원회', '국회운영위원회', '법제사법위원회',
+       '국방위원회', '국토교통위원회', '기획재정위원회', '특별위원회', '여성가족위원회', '농림축산식품해양수산위원회',
+       '외교통일위원회', '정보위원회', '과학기술정보방송통신위원회', '환경노동위원회', '교육위원회', '정무위원회']
 
-df = pd.read_csv('21th_bill_preprocessed.csv')
+if 'level_0' in df.columns:
+    del df['level_0']
 
-if '특별위원회' not in df.columns:
-    df['특별위원회'] = 0
+for com in committee:
+    if com not in df.columns:
+        df[com] = 0
 
-df = df[['의안번호', '법안코드', '법안명', '제안자', '접수일자', '당선횟수', '공동발의자수',
+if '반대당발언횟수' not in df.columns:
+    df['반대당발언횟수'] = 0
+
+df = df[['법안코드', '법안명', '제안자', '접수일자', '당선횟수', '공동발의자수',
        '입법형태', '선출형태', '처리구분', 'num_seats', 'party', '보건복지위원회',
        '행정안전위원회', '산업통상자원중소벤처기업위원회', '문화체육관광위원회', '국회운영위원회', '법제사법위원회',
        '국방위원회', '국토교통위원회', '기획재정위원회', '특별위원회', '여성가족위원회', '농림축산식품해양수산위원회',
@@ -18,10 +29,7 @@ df = df[['의안번호', '법안코드', '법안명', '제안자', '접수일자
        '부동산', '금융', '자동차', '건설/기계/조선', '유통/무역', 'IT', '농축산', '복지', '의료/보건',
        '도시/교통', '교육', '환경', '노동', '치안/안전', '가족', '여성', '예체능','상임위 상정 여부', '반대당발언횟수', '공동발의평균선수',  '정당다양성']]
 
-df = pd.get_dummies(df,columns=['입법형태','선출형태', 'party', '정당다양성', '상임위 상정 여부'])
-
-dt_com = df[df['상임위 상정 여부_1.0']==1]
-dt_ncom = df[df['상임위 상정 여부_1.0']==0]
+data = pd.get_dummies(df,columns=['입법형태','선출형태', 'party', '정당다양성', '상임위 상정 여부'])
 
 
 xgb_model_com = pickle.load(open('models/bill_prediction_com.pkl', "rb"))
@@ -35,6 +43,14 @@ col = ['당선횟수', '공동발의자수', 'num_seats', '보건복지위원회
        '환경', '노동', '치안/안전', '가족', '여성', '예체능', '반대당발언횟수', '공동발의평균선수', '입법형태_일부개정법률안', '입법형태_전부개정',
        '입법형태_제정', '선출형태_비례대표', '선출형태_지역구', 'party_0.0', 'party_1.0', 'party_2.0', 'party_3.0', 'party_4.0', 'party_5.0',
        '상임위 상정 여부_0.0', '상임위 상정 여부_1.0', '정당다양성_0.0', '정당다양성_1.0']
+
+for column in col:
+    if column not in data.columns:
+        data[column] = 0
+
+dt_com = data[data['상임위 상정 여부_1.0']==1]
+dt_ncom = data[data['상임위 상정 여부_1.0']==0]
+
 
 dt_com['prediction'] = xgb_model_com.predict(dt_com[col])
 
@@ -53,4 +69,4 @@ dt_ncom['prediction'] = xgb_model_ncom.predict(dt_ncom[col_re])
 
 dt_fin = pd.concat([dt_com, dt_ncom]).reset_index()
 
-dt_fin.to_csv('bill_prediction.csv', encoding='utf-8-sig')
+dt_fin.to_csv('bill_prediction_0112.csv', encoding='utf-8-sig')
