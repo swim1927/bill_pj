@@ -9,10 +9,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 #21대 국회 법안 데이터 전처리
 conn = sqlite3.connect("bills.db")
-df = pd.read_sql("select * from bills_2021 where proposeDt >= '2021-01-01'", con=conn)
+df = pd.read_sql("select * from bills_2021 where proposeDt < '2021-01-01'", con=conn)
 
-if 'level_0' in df.columns:
-    del df['level_0']
 
 #가결/부결 코딩
 
@@ -199,5 +197,46 @@ df = df.rename(columns={'billId':'법안코드',
                         'proposeDt':'접수일자'})
 
 
+df = df[['법안코드', '법안명', 'billNo', 'passGubn', 'procStageCd',
+ '접수일자', 'proposerKind', 'summary', 'generalResult', 'procDt', 'index',
+ '공동발의자수','공동발의평균선수', '정당다양성', 'presentDt',
+ 'COMMITTEE', 'PROC_RESULT', '제안자', 'PUBL_PROPOSER', 'COMMITTEE_ID', 'polyNm',
+ '당선횟수', '선출형태', '처리구분', '특별위원회',
+ '환경노동위원회', '여성가족위원회', '법제사법위원회', '농림축산식품해양수산위원회',
+ '기획재정위원회', '국방위원회', '과학기술정보방송통신위원회',
+ '산업통상자원중소벤처기업위원회', '국토교통위원회', '행정안전위원회',
+ '보건복지위원회', '문화체육관광위원회','교육위원회','외교통일위원회',
+ '정무위원회','국회운영위원회','party', 'num_seats', '입법형태',
+ 'summary_re', '국회', '정당/선거', '안보', '사법', '행정', '재정', '중소기업', '에너지', '부동산', '금융',
+ '자동차', '건설/기계/조선', '유통/무역', 'IT', '농축산', '복지', '의료/보건', '도시/교통',
+ '교육', '환경', '노동','치안/안전', '가족', '여성', '예체능', '상임위 상정 여부']]
+print(df.columns)
+
+
 conn = sqlite3.connect("bills_preprocessed.db", isolation_level=None)
-df.to_sql('bills', conn)
+
+cursor = conn.cursor()
+
+
+cursor.execute('CREATE TABLE IF NOT EXISTS bills (법안코드 text PRIMARY KEY, 법안명 text, billNo text, passGubn text,\
+ procStageCd text, 접수일자 text, proposerKind text, summary text, generalResult text, procDt text, "index" INTEGER, \
+ 공동발의자수 INTEGER, 공동발의평균선수 real, 정당다양성 integer, presentDt text, COMMITTEE text, PROC_RESULT text, 제안자 text, \
+ PUBL_PROPOSER text, COMMITTEE_ID integer, polyNm text, 당선횟수 integer, 선출형태 text, \
+ 처리구분 text, 특별위원회 integer, 환경노동위원회 integer ,여성가족위원회 integer, 법제사법위원회 integer, 농림축산식품해양수산위원회 integer, \
+ 기획재정위원회 integer, 국방위원회 integer,  과학기술정보방송통신위원회 integer, 산업통상자원중소벤처기업위원회 integer, \
+ 국토교통위원회 integer, 행정안전위원회 integer, 보건복지위원회 integer, 문화체육관광위원회 integer, 교육위원회 integer, \
+ 외교통일위원회 integer, 정무위원회 integer, 국회운영위원회 integer, party integer, num_seats integer, 입법형태 text, summary_re text, 국회 real, "정당/선거" real,\
+ 안보 real, 사법 real, 행정 real, 재정 real, 중소기업 real, 에너지 real, 부동산 real, 금융 real, 자동차 real, "건설/기계/조선" real, "유통/무역" real, IT real,\
+ 농축산 real, 복지 real, "의료/보건" real, "도시/교통" real, 교육 real, 환경 real, 노동 real, "치안/안전" real, 가족 real, 여성 real, 예체능 real, \
+ "상임위 상정 여부" real)')
+
+data = [tuple(x) for x in df.to_numpy()]
+
+sql = 'INSERT INTO bills VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, \
+                                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+cursor.executemany(sql, data)
+conn.commit()
+conn.close()
+
+
+#df.to_sql('bills', conn)

@@ -9,7 +9,9 @@ import numpy as np
 mykey = "f9191bcb5fc3472890a5e84347ae5ebb"
 MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
 
-url = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?ord=21&start_propose_date=2021-01-01&end_propose_date=2021-01-11&numOfRows=9000&ServiceKey=" + MYKEY2
+start_date = '2020-06-01'
+end_date = '2020-06-30'
+url = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?ord=21&start_propose_date={start_date}&end_propose_date={end_date}&numOfRows=9000&ServiceKey=" + MYKEY2
 
 req = requests.get(url)
 xpars = xmltodict.parse(req.text)
@@ -18,6 +20,11 @@ jsonDump = json.dumps(xpars)
 jsonBody = json.loads(jsonDump)
 
 bill_df = pd.DataFrame(jsonBody['response']['body']['items']['item'])
+
+if 'procDt' not in bill_df.columns:
+    bill_df['procDt'] = None
+if 'generalResult' not in bill_df.columns:
+    bill_df['generalResult'] = None
 
 print('법안 정보 가져오기')
 
@@ -54,9 +61,9 @@ for bill_id in bill_df['billId']:
         cobill = pd.concat([cobill, cobill_sub])
 
 
-congressman_re = congressman[['HG_NM', 'POLY_NM', '당선횟수', 'ELECT_GBN_NM']]
-congressman_re = congressman_re.rename(columns = {'HG_NM': 'memName', 'POLY_NM':'polyNm', 'ELECT_GBN_NM':'선출형태'})
-cobill = pd.merge(cobill, congressman_re, how='left', on=['memName', 'polyNm'])
+congressman_re = congressman[['HJ_NM', 'POLY_NM', '당선횟수', 'ELECT_GBN_NM']]
+congressman_re = congressman_re.rename(columns = { 'HJ_NM': 'hjNm', 'POLY_NM':'polyNm', 'ELECT_GBN_NM':'선출형태'})
+cobill = pd.merge(cobill, congressman_re, how='left', on=['hjNm', 'polyNm'])
 
 print(cobill.columns)
 
@@ -132,7 +139,7 @@ df3 = df2[['BILL_ID', 'COMMITTEE', 'PROC_RESULT', 'RST_PROPOSER', 'PUBL_PROPOSER
 df3 = df3.rename(columns={'BILL_ID': 'billId'})
 df = pd.merge(df, df3, how='left', on='billId')
 
-print('소관위 대표발의자 merge')
+print('소관위, 대표발의자 merge')
 
 #대표발의자 정당 merge
 cobill = cobill.rename(columns={'memName': 'RST_PROPOSER'})
@@ -144,5 +151,62 @@ df = pd.merge(df, df_re, how='left', on='billId')
 
 print('대표발의자 정당merge')
 
+#이수진 의원 동명이인 처리
+MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
+
+hjnm = '李秀眞'  #서울 동작구을
+check='G01'
+url_sujin = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?gbn=dae_num_name&ord=21&mem_name_check={check}&hj_nm={hjnm}&start_propose_date=2020-12-01&end_propose_date=2020-12-31&numOfRows=9000&ServiceKey=" + MYKEY2
+
+req_re = requests.get(url_sujin)
+xpars = xmltodict.parse(req_re.text)
+
+jsonDump = json.dumps(xpars)
+jsonBody = json.loads(jsonDump)
+
+sujin1 = pd.DataFrame(jsonBody['response']['body']['items']['item'])
+
+hjnm2 = '李壽珍' #비례대표
+check='G01'
+url_sujin2 = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?gbn=dae_num_name&ord=21&mem_name_check={check}&hj_nm={hjnm2}&start_propose_date=2020-12-01&end_propose_date=2020-12-31&numOfRows=9000&ServiceKey=" + MYKEY2
+
+req_re = requests.get(url_sujin2)
+xpars = xmltodict.parse(req_re.text)
+
+jsonDump = json.dumps(xpars)
+jsonBody = json.loads(jsonDump)
+
+sujin2 = pd.DataFrame(jsonBody['response']['body']['items']['item'])
+
+ids_sujin1 = list(sujin1['billId'])
+ids_sujin2 = list(sujin2['billId'])
+
+for i in range(len(df)):
+    if df.loc[i, 'billId'] in ids_sujin1:
+        df.loc[i, '선출형태'] = '지역구'
+    elif df.loc[i, 'billId'] in ids_sujin2:
+        df.loc[i, '선출형태'] = '비례대표'
+
+df = df.drop_duplicates()
+
+if 'level_0' in df.columns:
+    del df['level_0']
+
+
 conn = sqlite3.connect("bills.db", isolation_level=None)
-df.to_sql('bills_2021', conn)
+
+#df.to_sql('bills_2021', conn)
+
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE IF NOT EXISTS bills_2021 (billId text PRIMARY KEY, billName text, billNo text, passGubn text,\
+ procStageCd text, proposeDt text, proposerKind text, summary text, generalResult text, procDt text, "index" INTEGER, \
+ 공동발의자수 INTEGER, 공동발의평균선수 real, diversity integer, presentDt text, COMMITTEE text, PROC_RESULT text, RST_PROPOSER text, \
+ PUBL_PROPOSER text, COMMITTEE_ID integer, polyNm text, 당선횟수 integer, 선출형태 text)')
+
+data = [tuple(x) for x in df.to_numpy()]
+
+sql = 'INSERT INTO bills_2021 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+cursor.executemany(sql, data)
+conn.commit()
+conn.close()
+
