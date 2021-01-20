@@ -6,7 +6,6 @@ import json
 import numpy as np
 
 #법안 정보 가져오기
-mykey = "f9191bcb5fc3472890a5e84347ae5ebb"
 MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
 
 start_date = '2020-06-01'
@@ -21,13 +20,13 @@ jsonBody = json.loads(jsonDump)
 
 bill_df = pd.DataFrame(jsonBody['response']['body']['items']['item'])
 
-#계류의안만 update하기
-conn = sqlite3.connect("bills.db", isolation_level=None)
-cursor = conn.cursor()
-
 bill_df = bill_df[bill_df['passGubn']=='계류의안']
 data = bill_df[['presentDt', 'billId']]
 data = [tuple(x) for x in data.to_numpy()]
+
+#계류의안만 update하기
+conn = sqlite3.connect("bills.db", isolation_level=None)
+cursor = conn.cursor()
 
 sql = 'UPDATE bills_2021 SET presentDt=? WHERE billId=?'
 cursor.executemany(sql, data)

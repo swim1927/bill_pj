@@ -9,8 +9,8 @@ import numpy as np
 mykey = "f9191bcb5fc3472890a5e84347ae5ebb"
 MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
 
-start_date = '2020-06-01'
-end_date = '2020-06-30'
+start_date = '2020-09-01'
+end_date = '2020-09-30'
 url = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?ord=21&start_propose_date={start_date}&end_propose_date={end_date}&numOfRows=9000&ServiceKey=" + MYKEY2
 
 req = requests.get(url)
@@ -205,8 +205,14 @@ cursor.execute('CREATE TABLE IF NOT EXISTS bills_2021 (billId text PRIMARY KEY, 
 
 data = [tuple(x) for x in df.to_numpy()]
 
-sql = 'INSERT INTO bills_2021 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-cursor.executemany(sql, data)
+for row in data:
+    check = cursor.execute('SELECT EXISTS (select 1 from bills_2021 where billId=?)', (row[0],))
+    if check.fetchall()[0][0] == 1:
+        pass
+    else:
+        sql = 'INSERT INTO bills_2021 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        cursor.execute(sql, row)
+
 conn.commit()
 conn.close()
 

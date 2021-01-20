@@ -5,14 +5,6 @@ import sqlite3
 conn = sqlite3.connect("bills_preprocessed.db")
 df = pd.read_sql("select * from bills WHERE 접수일자 >= '2020-06-01' and passGubn = '계류의안'", con = conn)
 
-for i in range(len(df)):
-    if df.loc[i, 'proposerKind'] == '위원장':
-        df.loc[i, 'party'] = 4
-    elif df.loc[i, 'proposerKind'] == '의장':
-        df.loc[i, 'party'] = 4
-    elif df.loc[i, 'proposerKind'] == '정부':
-        df.loc[i, 'party'] = 5
-
 
 committee = ['보건복지위원회',
        '행정안전위원회', '산업통상자원중소벤처기업위원회', '문화체육관광위원회', '국회운영위원회', '법제사법위원회',
@@ -78,4 +70,4 @@ dt_ncom['prediction'] = xgb_model_ncom.predict(dt_ncom[col_re])
 
 dt_fin = pd.concat([dt_com, dt_ncom]).reset_index()
 
-dt_fin.to_csv('bill_prediction_0115.csv', encoding='utf-8-sig')
+dt_fin.to_csv('bill_prediction_0120.csv', encoding='utf-8-sig')

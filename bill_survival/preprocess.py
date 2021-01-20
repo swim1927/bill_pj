@@ -57,9 +57,14 @@ for i in range(len(df)):
         df.loc[i, 'party'] = 1
     elif df.loc[i, 'polyNm'] == '국민의당' or df.loc[i, 'polyNm'] == '기본소득당' or df.loc[i, 'polyNm'] == '시대전환' or df.loc[i, 'polyNm'] == '정의당':
         df.loc[i, 'party'] = 2
-    elif df.loc[i, 'RST_PROPOSER'] == '위원장':
+    elif df.loc[i, 'proposerKind'] == '위원장':
+        df.loc[i, 'RST_PROPOSER'] = '위원장'
         df.loc[i, 'party'] = 4
-    elif df.loc[i, 'RST_PROPOSER'] == '정부':
+    elif df.loc[i, 'proposerKind'] == '의장':
+        df.loc[i, 'RST_PROPOSER'] = '의장'
+        df.loc[i, 'party'] = 4
+    elif df.loc[i, 'proposerKind'] == '정부':
+        df.loc[i, 'RST_PROPOSER'] = '정부'
         df.loc[i, 'party'] = 5
     else:
         df.loc[i, 'party'] = 3
@@ -232,11 +237,18 @@ cursor.execute('CREATE TABLE IF NOT EXISTS bills (법안코드 text PRIMARY KEY,
 
 data = [tuple(x) for x in df.to_numpy()]
 
-sql = 'INSERT INTO bills VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, \
-                                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-cursor.executemany(sql, data)
+
+for row in data:
+    check = cursor.execute('SELECT EXISTS (select 1 from bills where 법안코드=?)', (row[0],))
+    if check.fetchall()[0][0] == 1:
+        pass
+    else:
+        sql = 'INSERT INTO bills VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, \
+                                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        cursor.execute(sql, row)
+
+
 conn.commit()
 conn.close()
-
 
 #df.to_sql('bills', conn)
