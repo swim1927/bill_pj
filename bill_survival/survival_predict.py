@@ -11,8 +11,6 @@ committee = ['보건복지위원회',
        '국방위원회', '국토교통위원회', '기획재정위원회', '특별위원회', '여성가족위원회', '농림축산식품해양수산위원회',
        '외교통일위원회', '정보위원회', '과학기술정보방송통신위원회', '환경노동위원회', '교육위원회', '정무위원회']
 
-if 'level_0' in df.columns:
-    del df['level_0']
 
 for com in committee:
     if com not in df.columns:
@@ -32,6 +30,7 @@ df = df[['법안코드', '법안명', '제안자', '접수일자', '당선횟수
 
 data = pd.get_dummies(df,columns=['입법형태','선출형태', 'party', '정당다양성', '상임위 상정 여부'])
 
+data = data.rename(columns={'party_0':'party_0.0', 'party_1':'party_1.0', 'party_2':'party_2.0', 'party_3':'party_3.0', 'party_4':'party_4.0', 'party_5':'party_5.0'})
 
 xgb_model_com = pickle.load(open('models/bill_prediction_com.pkl', "rb"))
 xgb_model_ncom = pickle.load(open('models/bill_prediction_ncom.pkl', "rb"))

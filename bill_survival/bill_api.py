@@ -61,9 +61,29 @@ for bill_id in bill_df['billId']:
         cobill = pd.concat([cobill, cobill_sub])
 
 
+cobill = cobill.reset_index()
+for i in range(len(cobill)):
+    if cobill.loc[i, 'polyNm'] == '미래통합당':
+        cobill.loc[i, 'polyNm'] = '국민의힘'
+
+
 congressman_re = congressman[['HJ_NM', 'POLY_NM', '당선횟수', 'ELECT_GBN_NM']]
-congressman_re = congressman_re.rename(columns = { 'HJ_NM': 'hjNm', 'POLY_NM':'polyNm', 'ELECT_GBN_NM':'선출형태'})
+congressman_re = congressman_re.rename(columns={'HJ_NM': 'hjNm', 'POLY_NM':'polyNm', 'ELECT_GBN_NM':'선출형태'})
 cobill = pd.merge(cobill, congressman_re, how='left', on=['hjNm', 'polyNm'])
+
+for i in range(len(cobill)):
+    if cobill.loc[i, 'memName'] == '김병욱' and cobill.loc[i, 'polyNm'] == '국민의힘':
+        cobill.loc[i, '당선횟수'] = 1
+        cobill.loc[i, '선출형태'] = '지역구'
+    if cobill.loc[i, 'memName'] == '전봉민':
+        cobill.loc[i, '당선횟수'] = 1
+        cobill.loc[i, '선출형태'] = '지역구'
+    if cobill.loc[i, 'memName'] == '박덕훔':
+        cobill.loc[i, '당선횟수'] = 3
+        cobill.loc[i, '선출형태'] = '지역구'
+    if cobill.loc[i, 'memName'] == '김홍걸':
+        cobill.loc[i, '당선횟수'] = 1
+        cobill.loc[i, '선출형태'] = '비례대표'
 
 print(cobill.columns)
 
@@ -113,10 +133,28 @@ for idx in df['billId']:
     jsonBody = json.loads(jsonDump)
 
     try:
-        dt = jsonBody['response']['body']['JurisdictionExamination']['item']['presentDt'] #submitDt: 위원회 회부일, presentDt: 위원회 상정일, procDt: 위원회 처리일
-        presentDt.append(dt)
+        item = jsonBody['response']['body']['JurisdictionExamination']['item']
     except:
         presentDt.append('None')
+    else:
+        if len(item) == 3:
+            if item[0]['presentDt'] != None:
+                presentDt.append(item[0]['presentDt'])
+            elif item[1]['presentDt'] != None:
+                presentDt.append(item[1]['presentDt'])
+            else:
+                presentDt.append(item[2]['presentDt'])
+        elif len(item) == 2:
+            if item[0]['presentDt'] != None:
+                presentDt.append(item[0]['presentDt'])
+            else:
+                presentDt.append(item[1]['presentDt'])
+        else:
+            try:
+                dt = jsonBody['response']['body']['JurisdictionExamination']['item']['presentDt'] #submitDt: 위원회 회부일, presentDt: 위원회 상정일, procDt: 위원회 처리일
+                presentDt.append(dt)
+            except:
+                presentDt.append('None')
 
 
 df['presentDt'] = presentDt

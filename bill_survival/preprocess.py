@@ -9,7 +9,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 #21대 국회 법안 데이터 전처리
 conn = sqlite3.connect("bills.db")
-df = pd.read_sql("select * from bills_2021 where proposeDt < '2021-01-01'", con=conn)
+df = pd.read_sql("select * from bills_2021 where proposeDt >= '2021-01-01'", con=conn)
 
 
 #가결/부결 코딩
@@ -57,7 +57,11 @@ for i in range(len(df)):
         df.loc[i, 'party'] = 1
     elif df.loc[i, 'polyNm'] == '국민의당' or df.loc[i, 'polyNm'] == '기본소득당' or df.loc[i, 'polyNm'] == '시대전환' or df.loc[i, 'polyNm'] == '정의당':
         df.loc[i, 'party'] = 2
-    elif df.loc[i, 'proposerKind'] == '위원장':
+    else:
+        df.loc[i, 'party'] = 3
+
+for i in range(len(df)):
+    if df.loc[i, 'proposerKind'] == '위원장':
         df.loc[i, 'RST_PROPOSER'] = '위원장'
         df.loc[i, 'party'] = 4
     elif df.loc[i, 'proposerKind'] == '의장':
@@ -66,8 +70,6 @@ for i in range(len(df)):
     elif df.loc[i, 'proposerKind'] == '정부':
         df.loc[i, 'RST_PROPOSER'] = '정부'
         df.loc[i, 'party'] = 5
-    else:
-        df.loc[i, 'party'] = 3
 
 
 for i in range(len(df)):
