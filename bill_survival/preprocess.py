@@ -9,8 +9,17 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 #21대 국회 법안 데이터 전처리
 conn = sqlite3.connect("bills.db")
-df = pd.read_sql("select * from bills_2021 where proposeDt >= '2021-01-01'", con=conn)
+#df = pd.read_sql("select * from bills_2021 where proposeDt >= '2021-01-01'", con=conn)
+cursor = conn.cursor()
 
+cursor.execute('select * from bills_2021')
+
+rows = cursor.fetchall()
+cols = [column[0] for column in cursor.description]
+
+df = pd.DataFrame.from_records(data=rows, columns=cols)
+
+conn.close()
 
 #가결/부결 코딩
 
@@ -203,6 +212,7 @@ df = df.rename(columns={'billId':'법안코드',
                         'diversity':'정당다양성',
                         'proposeDt':'접수일자'})
 
+df['반대당발언횟수']=0
 
 df = df[['법안코드', '법안명', 'billNo', 'passGubn', 'procStageCd',
  '접수일자', 'proposerKind', 'summary', 'generalResult', 'procDt', 'index',
@@ -216,7 +226,10 @@ df = df[['법안코드', '법안명', 'billNo', 'passGubn', 'procStageCd',
  '정무위원회','국회운영위원회','party', 'num_seats', '입법형태',
  'summary_re', '국회', '정당/선거', '안보', '사법', '행정', '재정', '중소기업', '에너지', '부동산', '금융',
  '자동차', '건설/기계/조선', '유통/무역', 'IT', '농축산', '복지', '의료/보건', '도시/교통',
- '교육', '환경', '노동','치안/안전', '가족', '여성', '예체능', '상임위 상정 여부']]
+ '교육', '환경', '노동','치안/안전', '가족', '여성', '예체능', '상임위 상정 여부', '반대당발언횟수']]
+
+
+
 print(df.columns)
 
 
@@ -235,7 +248,7 @@ cursor.execute('CREATE TABLE IF NOT EXISTS bills (법안코드 text PRIMARY KEY,
  외교통일위원회 integer, 정무위원회 integer, 국회운영위원회 integer, party integer, num_seats integer, 입법형태 text, summary_re text, 국회 real, "정당/선거" real,\
  안보 real, 사법 real, 행정 real, 재정 real, 중소기업 real, 에너지 real, 부동산 real, 금융 real, 자동차 real, "건설/기계/조선" real, "유통/무역" real, IT real,\
  농축산 real, 복지 real, "의료/보건" real, "도시/교통" real, 교육 real, 환경 real, 노동 real, "치안/안전" real, 가족 real, 여성 real, 예체능 real, \
- "상임위 상정 여부" real)')
+ "상임위 상정 여부" real, 반대당발언횟수 real)')
 
 data = [tuple(x) for x in df.to_numpy()]
 
@@ -243,10 +256,10 @@ data = [tuple(x) for x in df.to_numpy()]
 for row in data:
     check = cursor.execute('SELECT EXISTS (select 1 from bills where 법안코드=?)', (row[0],))
     if check.fetchall()[0][0] == 1:
-        pass
+        cursor.execute('UPDATE bills SET "상임위 상정 여부"=? WHERE 법안코드=?', (row[70], row[0]))
     else:
         sql = 'INSERT INTO bills VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, \
-                                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+                                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         cursor.execute(sql, row)
 
 

@@ -9,8 +9,8 @@ import numpy as np
 mykey = "f9191bcb5fc3472890a5e84347ae5ebb"
 MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
 
-start_date = '2020-09-01'
-end_date = '2020-09-30'
+start_date = '2021-01-16'
+end_date = '2021-01-20'
 url = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?ord=21&start_propose_date={start_date}&end_propose_date={end_date}&numOfRows=9000&ServiceKey=" + MYKEY2
 
 req = requests.get(url)
@@ -71,6 +71,8 @@ congressman_re = congressman[['HJ_NM', 'POLY_NM', '당선횟수', 'ELECT_GBN_NM'
 congressman_re = congressman_re.rename(columns={'HJ_NM': 'hjNm', 'POLY_NM':'polyNm', 'ELECT_GBN_NM':'선출형태'})
 cobill = pd.merge(cobill, congressman_re, how='left', on=['hjNm', 'polyNm'])
 
+
+'''
 for i in range(len(cobill)):
     if cobill.loc[i, 'memName'] == '김병욱' and cobill.loc[i, 'polyNm'] == '국민의힘':
         cobill.loc[i, '당선횟수'] = 1
@@ -84,6 +86,8 @@ for i in range(len(cobill)):
     if cobill.loc[i, 'memName'] == '김홍걸':
         cobill.loc[i, '당선횟수'] = 1
         cobill.loc[i, '선출형태'] = '비례대표'
+'''
+
 
 print(cobill.columns)
 
