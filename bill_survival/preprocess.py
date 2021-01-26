@@ -212,7 +212,6 @@ df = df.rename(columns={'billId':'법안코드',
                         'diversity':'정당다양성',
                         'proposeDt':'접수일자'})
 
-df['반대당발언횟수']=0
 
 df = df[['법안코드', '법안명', 'billNo', 'passGubn', 'procStageCd',
  '접수일자', 'proposerKind', 'summary', 'generalResult', 'procDt', 'index',
@@ -257,6 +256,7 @@ for row in data:
     check = cursor.execute('SELECT EXISTS (select 1 from bills where 법안코드=?)', (row[0],))
     if check.fetchall()[0][0] == 1:
         cursor.execute('UPDATE bills SET "상임위 상정 여부"=? WHERE 법안코드=?', (row[70], row[0]))
+        cursor.execute('UPDATE bills SET "반대당발언횟수"=? WHERE 법안코드=?', (row[71], row[0]))
     else:
         sql = 'INSERT INTO bills VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, \
                                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'

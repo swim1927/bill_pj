@@ -3,7 +3,7 @@ import pickle
 import sqlite3
 
 conn = sqlite3.connect("bills_preprocessed.db")
-df = pd.read_sql("select * from bills WHERE 접수일자 >= '2020-06-01'", con=conn)
+df = pd.read_sql("select * from bills WHERE passGubn='계류의안'", con=conn)
 
 
 committee = ['보건복지위원회',
@@ -16,8 +16,7 @@ for com in committee:
     if com not in df.columns:
         df[com] = 0
 
-if '반대당발언횟수' not in df.columns:
-    df['반대당발언횟수'] = 0
+
 
 df = df[['법안코드', '법안명', '제안자', '접수일자', '당선횟수', '공동발의자수',
        '입법형태', '선출형태', '처리구분', 'num_seats', 'party', '보건복지위원회',
@@ -69,4 +68,4 @@ dt_ncom['prediction'] = xgb_model_ncom.predict(dt_ncom[col_re])
 
 dt_fin = pd.concat([dt_com, dt_ncom]).reset_index()
 
-dt_fin.to_csv('bill_prediction_0120_re.csv', encoding='utf-8-sig')
+dt_fin.to_csv('bill_prediction_0126.csv', encoding='utf-8-sig')
