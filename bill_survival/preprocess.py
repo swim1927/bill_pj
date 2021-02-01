@@ -12,7 +12,7 @@ conn = sqlite3.connect("bills.db")
 #df = pd.read_sql("select * from bills_2021 where proposeDt >= '2021-01-01'", con=conn)
 cursor = conn.cursor()
 
-cursor.execute('select * from bills_2021')
+cursor.execute("select * from bills_2021 where proposeDt >= '2021-01-15'")
 
 rows = cursor.fetchall()
 cols = [column[0] for column in cursor.description]

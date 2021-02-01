@@ -3,7 +3,7 @@ import pickle
 import sqlite3
 
 conn = sqlite3.connect("bills_preprocessed.db")
-df = pd.read_sql("select * from bills WHERE passGubn='계류의안'", con=conn)
+df = pd.read_sql("select * from bills WHERE 접수일자 >= '2021-01-25'", con=conn)
 
 
 committee = ['보건복지위원회',

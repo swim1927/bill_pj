@@ -9,8 +9,8 @@ import numpy as np
 mykey = "f9191bcb5fc3472890a5e84347ae5ebb"
 MYKEY2 = "sh1BLNic10zE0pynUHLuP0%2FDxTd5Fi4m5%2B4CojHK%2B%2BXTxH9ykyO3yVPROWHp3zsR9%2BB38%2BkIGmWgHB%2BYfmUB6A%3D%3D"
 
-start_date = '2021-01-21'
-end_date = '2021-01-23'
+start_date = '2021-01-27'
+end_date = '2021-01-29'
 url = f"http://apis.data.go.kr/9710000/BillInfoService2/getBillInfoList?ord=21&start_propose_date={start_date}&end_propose_date={end_date}&numOfRows=9000&ServiceKey=" + MYKEY2
 
 req = requests.get(url)
@@ -234,6 +234,7 @@ df = df.drop_duplicates()
 if 'level_0' in df.columns:
     del df['level_0']
 
+df['반대당발언횟수'] = 0
 
 conn = sqlite3.connect("bills.db", isolation_level=None)
 
@@ -243,7 +244,7 @@ cursor = conn.cursor()
 cursor.execute('CREATE TABLE IF NOT EXISTS bills_2021 (billId text PRIMARY KEY, billName text, billNo text, passGubn text,\
  procStageCd text, proposeDt text, proposerKind text, summary text, generalResult text, procDt text, "index" INTEGER, \
  공동발의자수 INTEGER, 공동발의평균선수 real, diversity integer, presentDt text, COMMITTEE text, PROC_RESULT text, RST_PROPOSER text, \
- PUBL_PROPOSER text, COMMITTEE_ID integer, polyNm text, 당선횟수 integer, 선출형태 text)')
+ PUBL_PROPOSER text, COMMITTEE_ID integer, polyNm text, 당선횟수 integer, 선출형태 text, 반대당발언횟수 integer)')
 
 data = [tuple(x) for x in df.to_numpy()]
 
@@ -252,7 +253,7 @@ for row in data:
     if check.fetchall()[0][0] == 1:
         pass
     else:
-        sql = 'INSERT INTO bills_2021 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        sql = 'INSERT INTO bills_2021 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         cursor.execute(sql, row)
 
 conn.commit()
